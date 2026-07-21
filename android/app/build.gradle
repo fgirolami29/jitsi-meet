@@ -11,6 +11,12 @@ if (googleServicesEnabled) {
 // next ~680 years.
 // https://stackoverflow.com/a/38643838
 def vcode = (int) (((new Date().getTime() / 1000) - 1546297200) / 10)
+def bmjExitUrl = (
+    System.getenv('BMJ_EXIT_URL')
+        ?: project.findProperty('BMJ_EXIT_URL')
+        ?: 'https://live.barbagiamusei.it/musei-in-diretta?bmj_totem=1'
+).toString()
+def escapedBmjExitUrl = bmjExitUrl.replace('\\', '\\\\').replace('"', '\\"')
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -21,12 +27,14 @@ android {
     }
 
     defaultConfig {
-        applicationId 'org.jitsi.meet'
+        applicationId 'it.barbagiamusei.live'
         versionCode vcode
         versionName project.appVersion
 
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
+
+        buildConfigField "String", "BMJ_EXIT_URL", "\"${escapedBmjExitUrl}\""
 
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
