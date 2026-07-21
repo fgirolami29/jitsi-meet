@@ -185,6 +185,8 @@
     "lint-fix": "eslint  --max-warnings 0 --fix .",
     "postinstall": "patch-package && jetify",
     "validate": "npm ls",
-    "start": "make dev"
+    "start": "make dev",
+    "deploy:android:lab":"./scripts/android/bmj-build-debug.sh lab",
+    "deploy:android:prod":"./scripts/android/bmj-build-debug.sh prod"
   }
 }
