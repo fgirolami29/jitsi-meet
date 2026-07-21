@@ -16,6 +16,7 @@
 
 package org.jitsi.meet;
 
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -74,6 +75,16 @@ public class MainActivity extends JitsiMeetActivity {
      * Default URL as could be obtained from RestrictionManager
      */
     private String defaultURL;
+
+    /**
+     * True after the local user has actually joined a conference.
+     */
+    private boolean conferenceWasJoined;
+
+    /**
+     * Prevents duplicate browser launches when close events arrive in sequence.
+     */
+    private boolean exitRedirectHandled;
 
 
     // JitsiMeetActivity overrides
@@ -154,9 +165,69 @@ public class MainActivity extends JitsiMeetActivity {
             .setFeatureFlag("welcomepage.enabled", true)
             .setFeatureFlag("call-integration.enabled", false)
             .setFeatureFlag("resolution", 360)
-            .setFeatureFlag("server-url-change.enabled", !configurationByRestrictions)
+            .setFeatureFlag("server-url-change.enabled", false)
             .build();
         JitsiMeet.setDefaultConferenceOptions(defaultOptions);
+    }
+
+    @Override
+    protected void onConferenceJoined(HashMap<String, Object> extraData) {
+        conferenceWasJoined = true;
+        super.onConferenceJoined(extraData);
+    }
+
+    @Override
+    protected void onConferenceTerminated(HashMap<String, Object> extraData) {
+        super.onConferenceTerminated(extraData);
+        returnToTotem();
+    }
+
+    @Override
+    protected void onReadyToClose() {
+        if (!returnToTotem()) {
+            super.onReadyToClose();
+        }
+    }
+
+    /**
+     * Opens the configured totem page in Google Chrome after leaving a joined conference.
+     * Falls back to the default browser when Chrome is not installed.
+     *
+     * @return true if a browser was launched, false otherwise.
+     */
+    private boolean returnToTotem() {
+        if (!conferenceWasJoined || exitRedirectHandled) {
+            return false;
+        }
+
+        exitRedirectHandled = true;
+
+        Intent browserIntent = new Intent(
+            Intent.ACTION_VIEW,
+            Uri.parse(BuildConfig.BMJ_EXIT_URL));
+
+        browserIntent.addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK
+                | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        browserIntent.setPackage("com.android.chrome");
+
+        try {
+            startActivity(browserIntent);
+        } catch (ActivityNotFoundException chromeNotAvailable) {
+            browserIntent.setPackage(null);
+
+            try {
+                startActivity(browserIntent);
+            } catch (ActivityNotFoundException browserNotAvailable) {
+                exitRedirectHandled = false;
+                Log.e(TAG, "No browser available for BMJ exit URL", browserNotAvailable);
+                return false;
+            }
+        }
+
+        finishAndRemoveTask();
+        return true;
     }
 
     private void resolveRestrictions() {
