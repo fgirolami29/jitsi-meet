@@ -63,6 +63,21 @@ android {
             buildConfigField "boolean", "GOOGLE_SERVICES_ENABLED", "${googleServicesEnabled}"
             buildConfigField "boolean", "LIBRE_BUILD", "${rootProject.ext.libreBuild}"
         }
+
+        /*
+         * Build di laboratorio con comportamento React Native release:
+         * bundle JS incorporato, Metro e LogBox disabilitati.
+         * La firma debug consente l'installazione sull'emulatore.
+         */
+        labRelease {
+            initWith release
+
+            signingConfig signingConfigs.debug
+            debuggable false
+            minifyEnabled false
+
+            matchingFallbacks = [ 'release' ]
+        }
     }
 
     sourceSets {

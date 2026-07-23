@@ -186,7 +186,19 @@
     "postinstall": "patch-package && jetify",
     "validate": "npm ls",
     "start": "make dev",
-    "deploy:android:lab":"./scripts/android/bmj-build-debug.sh lab",
-    "deploy:android:prod":"./scripts/android/bmj-build-debug.sh prod"
+    "vm:start": "gvm start",
+    "vm:stop": "gvm stop",
+    "vm:restart": "gvm restart",
+    "vm:status": "gvm status",
+    "vm:open": "gvm open",
+    "vm:logs": "gvm logs",
+    "vm:mic:on": "gmic on",
+    "vm:mic:off": "gmic off",
+    "vm:mic:toggle": "gmic toggle",
+    "vm:mic:status": "gmic status",
+    "vm:mic:apply": "gmic apply --no-restart",
+    "deploy:android:lab": "./scripts/android/bmj-build-debug.sh lab",
+    "deploy:android:prod": "./scripts/android/bmj-build-debug.sh prod",
+    "deploy:android:lab:boot": "npm run vm:start && npm run deploy:android:lab"
   }
 }

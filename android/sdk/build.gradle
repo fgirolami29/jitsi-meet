@@ -170,6 +170,13 @@ android.libraryVariants.all { def variant ->
     mergeAssetsTask.doLast {
         def assetsDir = mergeAssetsTask.outputDir.get()
 
+        // Bundle React Native application.
+        copy {
+            from(jsBundleDir)
+            include("index.android.bundle")
+            into(assetsDir)
+        }
+
         // Bundle sounds
         //
         copy {
