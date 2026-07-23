@@ -92,3 +92,8 @@ twa/*.apk
 twa/*.aab
 twa/assetlinks.json
 
+# Local audit, rollback and diagnostic artifacts
+/_BACKUP/
+
+# Eclipse Java language server local compiler preferences
+**/.settings/org.eclipse.jdt.core.prefs
