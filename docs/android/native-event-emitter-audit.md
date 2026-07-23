@@ -67,3 +67,42 @@ Questa scelta:
 - non modifica React Native globalmente;
 - resta riproducibile dopo ogni `npm install` grazie al `postinstall`;
 - limita la modifica alle sole dipendenze comprovate.
+
+## Risoluzione applicata
+
+La correzione è stata resa persistente tramite:
+
+- `patches/react-native-background-timer+2.4.1.patch`;
+- `patches/react-native-reanimated+1.13.3.patch`.
+
+Le patch aggiungono esclusivamente i metodi bridge `addListener` e
+`removeListeners` alle due classi native risultate responsabili.
+
+La generazione è stata limitata alle sole classi Java, escludendo
+artefatti Gradle e metadati Eclipse locali.
+
+## Verifica finale
+
+- build: `labRelease`;
+- installazione su `emulator-5554`: completata;
+- bundle SDK e bundle APK: identici;
+- SHA-256 bundle: `43d851e06a644fc581f9ea826a6571c183dea91cd2970bbdb579e8234ffdddcd`;
+- warning `NativeEventEmitter`: **zero**;
+- errori runtime rilevanti nel Logcat: **zero**;
+- marker diagnostici temporanei: **zero**.
+
+Le prove complete sono conservate in:
+
+- `_BACKUP/native-emitter-final-20260723-233649/full-run.txt`;
+- `_BACKUP/native-emitter-final-20260723-233649/logcat.txt`.
+
+`react-native-performance` non è stato modificato perché la diagnosi
+runtime ha dimostrato che viene caricato ma non genera questi warning.
+
+## Cronologia
+
+Il commit precedente conserva diagnosi, causa e responsabili prima
+dell'intervento.
+
+Questo commit conserva la correzione riproducibile e le verifiche
+eseguite sull'APK installato.

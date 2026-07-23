@@ -1,0 +1,27 @@
+diff --git a/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/ReanimatedModule.java b/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/ReanimatedModule.java
+index 373c2da..185f990 100644
+--- a/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/ReanimatedModule.java
++++ b/node_modules/react-native-reanimated/android/src/main/java/com/swmansion/reanimated/ReanimatedModule.java
+@@ -90,6 +90,22 @@ public class ReanimatedModule extends ReactContextBaseJavaModule implements
+     return NAME;
+   }
+
++  /**
++   * Required by React Native's NativeEventEmitter contract.
++   */
++  @ReactMethod
++  public void addListener(String eventName) {
++    // Listener accounting is not required by this module.
++  }
++
++  /**
++   * Required by React Native's NativeEventEmitter contract.
++   */
++  @ReactMethod
++  public void removeListeners(Integer count) {
++    // Listener accounting is not required by this module.
++  }
++
+   private NodesManager getNodesManager() {
+     if (mNodesManager == null) {
+       mNodesManager = new NodesManager(getReactApplicationContext());
