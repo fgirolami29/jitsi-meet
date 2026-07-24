@@ -28,6 +28,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.View;
 
 import androidx.annotation.Nullable;
 
@@ -92,6 +93,7 @@ public class MainActivity extends JitsiMeetActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setIntent(normalizeConferenceIntent(getIntent()));
         JitsiMeet.showSplashScreen(this);
         super.onCreate(null);
     }
@@ -171,6 +173,13 @@ public class MainActivity extends JitsiMeetActivity {
     }
 
     @Override
+    protected void onConferenceWillJoin(HashMap<String, Object> extraData) {
+        conferenceWasJoined = false;
+        exitRedirectHandled = false;
+        super.onConferenceWillJoin(extraData);
+    }
+
+    @Override
     protected void onConferenceJoined(HashMap<String, Object> extraData) {
         conferenceWasJoined = true;
         super.onConferenceJoined(extraData);
@@ -202,6 +211,9 @@ public class MainActivity extends JitsiMeetActivity {
 
         exitRedirectHandled = true;
 
+        final View decorView = getWindow().getDecorView();
+        decorView.setVisibility(View.INVISIBLE);
+
         Intent browserIntent = new Intent(
             Intent.ACTION_VIEW,
             Uri.parse(BuildConfig.BMJ_EXIT_URL));
@@ -220,14 +232,58 @@ public class MainActivity extends JitsiMeetActivity {
             try {
                 startActivity(browserIntent);
             } catch (ActivityNotFoundException browserNotAvailable) {
+                decorView.setVisibility(View.VISIBLE);
                 exitRedirectHandled = false;
                 Log.e(TAG, "No browser available for BMJ exit URL", browserNotAvailable);
                 return false;
             }
         }
 
+        overridePendingTransition(0, 0);
         finishAndRemoveTask();
         return true;
+    }
+
+    /**
+     * Converts the dedicated browser App Link into the actual Jitsi room URL.
+     *
+     * The browser owns /musei-in-diretta?bmj_totem=1, while the application
+     * exclusively owns /app/musei-in-diretta.
+     */
+    private Intent normalizeConferenceIntent(Intent intent) {
+        if (intent == null || !Intent.ACTION_VIEW.equals(intent.getAction())) {
+            return intent;
+        }
+
+        Uri uri = intent.getData();
+
+        if (uri == null
+                || !"https".equalsIgnoreCase(uri.getScheme())
+                || !BuildConfig.BMJ_APP_LINK_HOST.equalsIgnoreCase(uri.getHost())
+                || !BuildConfig.BMJ_APP_LINK_PATH.equals(uri.getPath())) {
+            return intent;
+        }
+
+        Uri conferenceUri = uri.buildUpon()
+            .path(BuildConfig.BMJ_CONFERENCE_PATH)
+            .clearQuery()
+            .fragment(null)
+            .build();
+
+        Intent normalizedIntent = new Intent(intent);
+        normalizedIntent.setData(conferenceUri);
+
+        Log.i(TAG, "Normalized BMJ App Link to conference URL: " + conferenceUri);
+
+        return normalizedIntent;
+    }
+
+    @Override
+    public void onNewIntent(Intent intent) {
+        Intent normalizedIntent = normalizeConferenceIntent(intent);
+
+        setIntent(normalizedIntent);
+        super.onNewIntent(normalizedIntent);
     }
 
     private void resolveRestrictions() {

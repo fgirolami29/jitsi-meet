@@ -16,7 +16,33 @@ def bmjExitUrl = (
         ?: project.findProperty('BMJ_EXIT_URL')
         ?: 'https://live.barbagiamusei.it/musei-in-diretta?bmj_totem=1'
 ).toString()
-def escapedBmjExitUrl = bmjExitUrl.replace('\\', '\\\\').replace('"', '\\"')
+def escapeBuildConfigString = { String value ->
+    value.replace('\\', '\\\\').replace('"', '\\"')
+}
+
+def bmjExitUri = new java.net.URI(bmjExitUrl)
+def bmjAppLinkHost = bmjExitUri.host
+
+if (!bmjAppLinkHost) {
+    throw new GradleException("BMJ_EXIT_URL must contain a valid host: ${bmjExitUrl}")
+}
+
+def bmjAppLinkPath = (
+    System.getenv('BMJ_APP_LINK_PATH')
+        ?: project.findProperty('BMJ_APP_LINK_PATH')
+        ?: '/app/musei-in-diretta'
+).toString()
+
+def bmjConferencePath = (
+    System.getenv('BMJ_CONFERENCE_PATH')
+        ?: project.findProperty('BMJ_CONFERENCE_PATH')
+        ?: '/musei-in-diretta'
+).toString()
+
+def escapedBmjExitUrl = escapeBuildConfigString(bmjExitUrl)
+def escapedBmjAppLinkHost = escapeBuildConfigString(bmjAppLinkHost)
+def escapedBmjAppLinkPath = escapeBuildConfigString(bmjAppLinkPath)
+def escapedBmjConferencePath = escapeBuildConfigString(bmjConferencePath)
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -34,7 +60,15 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
 
+        manifestPlaceholders = [
+            bmjAppLinkHost: bmjAppLinkHost,
+            bmjAppLinkPath: bmjAppLinkPath
+        ]
+
         buildConfigField "String", "BMJ_EXIT_URL", "\"${escapedBmjExitUrl}\""
+        buildConfigField "String", "BMJ_APP_LINK_HOST", "\"${escapedBmjAppLinkHost}\""
+        buildConfigField "String", "BMJ_APP_LINK_PATH", "\"${escapedBmjAppLinkPath}\""
+        buildConfigField "String", "BMJ_CONFERENCE_PATH", "\"${escapedBmjConferencePath}\""
 
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'

@@ -28,11 +28,27 @@
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
+      <!-- Fallback legacy: resta disponibile ma non è il percorso ordinario. -->
       <intent-filter>
         <action android:name="android.intent.action.VIEW" />
         <category android:name="android.intent.category.BROWSABLE" />
         <category android:name="android.intent.category.DEFAULT" />
         <data android:scheme="it.barbagiamusei.live" />
+      </intent-filter>
+
+      <!--
+        App Link verificato dedicato esclusivamente al passaggio totem -> APK.
+        L'host viene ricavato dalla BMJ_EXIT_URL della build.
+      -->
+      <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <category android:name="android.intent.category.DEFAULT" />
+
+        <data
+            android:host="${bmjAppLinkHost}"
+            android:path="${bmjAppLinkPath}"
+            android:scheme="https" />
       </intent-filter>
     </activity>
   </application>
