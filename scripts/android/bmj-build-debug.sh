@@ -3,7 +3,7 @@
 usage() {
   cat <<'EOF'
 Uso:
-  scripts/android/bmj-build-debug.sh [ambiente] [exit-url]
+  scripts/android/bmj-build-debug.sh [ambiente] [exit-url] [server-url]
 
 Ambienti:
   lab                usa live.barbagiamusei.test
@@ -30,17 +30,25 @@ fi
 
 CODECORN_ENV="${1:-lab}"
 
-LAB_URL='https://live.barbagiamusei.test/musei-in-diretta?bmj_totem=1'
-PRODUCTION_URL='https://live.barbagiamusei.it/musei-in-diretta?bmj_totem=1'
+LAB_SERVER_URL='https://live.barbagiamusei.test'
+LAB_EXIT_URL='https://live.barbagiamusei.test/musei-in-diretta?bmj_totem=1'
+
+PRODUCTION_SERVER_URL='https://live.barbagiamusei.it'
+PRODUCTION_EXIT_URL='https://live.barbagiamusei.it/musei-in-diretta?bmj_totem=1'
+
+BMJ_APP_LINK_PATH='/app/musei-in-diretta'
+BMJ_CONFERENCE_PATH='/musei-in-diretta'
 
 case "$CODECORN_ENV" in
 lab)
-  DEFAULT_URL="$LAB_URL"
+  DEFAULT_SERVER_URL="$LAB_SERVER_URL"
+  DEFAULT_EXIT_URL="$LAB_EXIT_URL"
   GRADLE_TASK='assembleLabRelease'
   APK_DIR='app/build/outputs/apk/labRelease'
   ;;
 production | prod)
-  DEFAULT_URL="$PRODUCTION_URL"
+  DEFAULT_SERVER_URL="$PRODUCTION_SERVER_URL"
+  DEFAULT_EXIT_URL="$PRODUCTION_EXIT_URL"
   GRADLE_TASK='assembleRelease'
   APK_DIR='app/build/outputs/apk/release'
   ;;
@@ -60,7 +68,32 @@ ADB="$ANDROID_SDK_ROOT/platform-tools/adb"
 
 PATH="$JAVA_HOME/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
 
-BMJ_EXIT_URL="${2:-$DEFAULT_URL}"
+BMJ_EXIT_URL="${2:-$DEFAULT_EXIT_URL}"
+BMJ_SERVER_URL="${3:-$DEFAULT_SERVER_URL}"
+
+if [[ -n ${2:-} && -z ${3:-} ]]; then
+  BMJ_SERVER_URL="$(
+    python3 - "$BMJ_EXIT_URL" <<'PYURL'
+import sys
+from urllib.parse import urlsplit
+
+parsed = urlsplit(sys.argv[1])
+
+if parsed.scheme != "https" or not parsed.hostname:
+    raise SystemExit("Exit URL personalizzato non valido")
+
+authority = parsed.hostname
+
+if parsed.port:
+    authority = f"{authority}:{parsed.port}"
+
+print(f"https://{authority}")
+PYURL
+  )" || {
+    printf 'ERRORE: impossibile derivare BMJ_SERVER_URL da %s\n' "$BMJ_EXIT_URL"
+    exit 2
+  }
+fi
 
 load_env_paths() {
   local repo_root
@@ -77,7 +110,10 @@ load_env_paths() {
   export JAVA_HOME
   export ANDROID_SDK_ROOT
   export PATH
+  export BMJ_SERVER_URL
   export BMJ_EXIT_URL
+  export BMJ_APP_LINK_PATH
+  export BMJ_CONFERENCE_PATH
 
   cd "$repo_root/android" || {
     printf 'Directory Android inesistente: %s/android\n' "$repo_root"
@@ -87,7 +123,10 @@ load_env_paths() {
 stop_gradle_and_build() {
   printf '\n===== CONFIGURAZIONE =====\n'
   printf 'Ambiente: %s\n' "$CODECORN_ENV"
+  printf 'Server URL: %s\n' "$BMJ_SERVER_URL"
   printf 'Exit URL: %s\n' "$BMJ_EXIT_URL"
+  printf 'App Link path: %s\n' "$BMJ_APP_LINK_PATH"
+  printf 'Conference path: %s\n' "$BMJ_CONFERENCE_PATH"
   printf 'Java: %s\n' "$JAVA_HOME"
   printf 'ADB: %s\n' "$ADB"
   printf 'Gradle task: %s\n' "$GRADLE_TASK"
@@ -97,7 +136,10 @@ stop_gradle_and_build() {
   ./gradlew --stop
 
   printf '\n===== BUILD ANDROID =====\n'
+  BMJ_SERVER_URL="$BMJ_SERVER_URL" \
   BMJ_EXIT_URL="$BMJ_EXIT_URL" \
+  BMJ_APP_LINK_PATH="$BMJ_APP_LINK_PATH" \
+  BMJ_CONFERENCE_PATH="$BMJ_CONFERENCE_PATH" \
     ./gradlew \
     --no-daemon \
     --stacktrace \
@@ -156,6 +198,7 @@ build_up() {
 
   printf '\n===== DEPLOY COMPLETATO =====\n'
   printf 'Ambiente: %s\n' "$CODECORN_ENV"
+  printf 'Server URL: %s\n' "$BMJ_SERVER_URL"
   printf 'Exit URL: %s\n' "$BMJ_EXIT_URL"
 }
 

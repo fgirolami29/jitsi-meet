@@ -11,34 +11,86 @@ if (googleServicesEnabled) {
 // next ~680 years.
 // https://stackoverflow.com/a/38643838
 def vcode = (int) (((new Date().getTime() / 1000) - 1546297200) / 10)
-def bmjExitUrl = (
-    System.getenv('BMJ_EXIT_URL')
-        ?: project.findProperty('BMJ_EXIT_URL')
-        ?: 'https://live.barbagiamusei.it/musei-in-diretta?bmj_totem=1'
-).toString()
+def requiredBmjEnvironment = { String name ->
+    def value = System.getenv(name)
+
+    if (value == null || value.trim().isEmpty()) {
+        throw new GradleException(
+            "${name} is required. Use the CodeCorn Android build script."
+        )
+    }
+
+    value.trim()
+}
+
+def parseBmjHttpsUri = { String name, String value ->
+    java.net.URI uri
+
+    try {
+        uri = new java.net.URI(value)
+    } catch (Exception error) {
+        throw new GradleException(
+            "${name} is not a valid URI: ${value}",
+            error
+        )
+    }
+
+    if (!'https'.equalsIgnoreCase(uri.scheme) || !uri.host) {
+        throw new GradleException(
+            "${name} must be an absolute HTTPS URL: ${value}"
+        )
+    }
+
+    uri
+}
+
+def validateBmjPath = { String name, String value ->
+    if (!value.startsWith('/')
+            || value.contains('?')
+            || value.contains('#')
+            || value.contains('://')) {
+        throw new GradleException(
+            "${name} must be an absolute path without query or fragment: ${value}"
+        )
+    }
+}
+
 def escapeBuildConfigString = { String value ->
     value.replace('\\', '\\\\').replace('"', '\\"')
 }
 
-def bmjExitUri = new java.net.URI(bmjExitUrl)
-def bmjAppLinkHost = bmjExitUri.host
+def bmjServerUrl = requiredBmjEnvironment('BMJ_SERVER_URL')
+def bmjExitUrl = requiredBmjEnvironment('BMJ_EXIT_URL')
+def bmjAppLinkPath = requiredBmjEnvironment('BMJ_APP_LINK_PATH')
+def bmjConferencePath = requiredBmjEnvironment('BMJ_CONFERENCE_PATH')
 
-if (!bmjAppLinkHost) {
-    throw new GradleException("BMJ_EXIT_URL must contain a valid host: ${bmjExitUrl}")
+def bmjServerUri = parseBmjHttpsUri('BMJ_SERVER_URL', bmjServerUrl)
+def bmjExitUri = parseBmjHttpsUri('BMJ_EXIT_URL', bmjExitUrl)
+
+def bmjServerPath = bmjServerUri.path ?: ''
+
+if (!(bmjServerPath == '' || bmjServerPath == '/')
+        || bmjServerUri.rawQuery != null
+        || bmjServerUri.rawFragment != null
+        || bmjServerUri.rawUserInfo != null) {
+    throw new GradleException(
+        "BMJ_SERVER_URL must contain only scheme and authority: ${bmjServerUrl}"
+    )
 }
 
-def bmjAppLinkPath = (
-    System.getenv('BMJ_APP_LINK_PATH')
-        ?: project.findProperty('BMJ_APP_LINK_PATH')
-        ?: '/app/musei-in-diretta'
-).toString()
+if (!bmjServerUri.host.equalsIgnoreCase(bmjExitUri.host)) {
+    throw new GradleException(
+        "BMJ_SERVER_URL and BMJ_EXIT_URL must use the same host: "
+            + "${bmjServerUri.host} != ${bmjExitUri.host}"
+    )
+}
 
-def bmjConferencePath = (
-    System.getenv('BMJ_CONFERENCE_PATH')
-        ?: project.findProperty('BMJ_CONFERENCE_PATH')
-        ?: '/musei-in-diretta'
-).toString()
+validateBmjPath('BMJ_APP_LINK_PATH', bmjAppLinkPath)
+validateBmjPath('BMJ_CONFERENCE_PATH', bmjConferencePath)
 
+def bmjAppLinkHost = bmjServerUri.host
+
+def escapedBmjServerUrl = escapeBuildConfigString(bmjServerUrl)
 def escapedBmjExitUrl = escapeBuildConfigString(bmjExitUrl)
 def escapedBmjAppLinkHost = escapeBuildConfigString(bmjAppLinkHost)
 def escapedBmjAppLinkPath = escapeBuildConfigString(bmjAppLinkPath)
@@ -65,6 +117,9 @@ android {
             bmjAppLinkPath: bmjAppLinkPath
         ]
 
+        resValue "string", "bmj_server_url", bmjServerUrl
+
+        buildConfigField "String", "BMJ_SERVER_URL", "\"${escapedBmjServerUrl}\""
         buildConfigField "String", "BMJ_EXIT_URL", "\"${escapedBmjExitUrl}\""
         buildConfigField "String", "BMJ_APP_LINK_HOST", "\"${escapedBmjAppLinkHost}\""
         buildConfigField "String", "BMJ_APP_LINK_PATH", "\"${escapedBmjAppLinkPath}\""
