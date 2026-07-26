@@ -30,10 +30,10 @@ fi
 
 CODECORN_ENV="${1:-lab}"
 
-LAB_SERVER_URL='https://live.barbagiamusei.test'
+LAB_SERVER_URL='https://live.barbagiamusei.test/'
 LAB_EXIT_URL='https://live.barbagiamusei.test/musei-in-diretta?bmj_totem=1'
 
-PRODUCTION_SERVER_URL='https://live.barbagiamusei.it'
+PRODUCTION_SERVER_URL='https://live.barbagiamusei.it/'
 PRODUCTION_EXIT_URL='https://live.barbagiamusei.it/musei-in-diretta?bmj_totem=1'
 
 BMJ_APP_LINK_PATH='/app/musei-in-diretta'
@@ -137,9 +137,9 @@ stop_gradle_and_build() {
 
   printf '\n===== BUILD ANDROID =====\n'
   BMJ_SERVER_URL="$BMJ_SERVER_URL" \
-  BMJ_EXIT_URL="$BMJ_EXIT_URL" \
-  BMJ_APP_LINK_PATH="$BMJ_APP_LINK_PATH" \
-  BMJ_CONFERENCE_PATH="$BMJ_CONFERENCE_PATH" \
+    BMJ_EXIT_URL="$BMJ_EXIT_URL" \
+    BMJ_APP_LINK_PATH="$BMJ_APP_LINK_PATH" \
+    BMJ_CONFERENCE_PATH="$BMJ_CONFERENCE_PATH" \
     ./gradlew \
     --no-daemon \
     --stacktrace \

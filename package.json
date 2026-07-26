@@ -199,6 +199,7 @@
     "vm:mic:apply": "gmic apply --no-restart",
     "deploy:android:lab": "./scripts/android/bmj-build-debug.sh lab",
     "deploy:android:prod": "./scripts/android/bmj-build-debug.sh prod",
-    "deploy:android:lab:boot": "npm run vm:start && npm run deploy:android:lab"
+    "deploy:android:lab:boot": "npm run vm:start && npm run deploy:android:lab",
+    "deploy:android:prod:diag": "./scripts/android/bmj-post-build-diagnostic-check-sh"
   }
 }

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+ADB="$HOME/Library/Android/sdk/platform-tools/adb"
+PACKAGE="it.barbagiamusei.live"
+ACTIVITY="org.jitsi.meet.MainActivity"
+URL='https://live.barbagiamusei.it/app/musei-in-diretta#userInfo.displayName=%22Museo%20Test%22'
+
+"$ADB" shell am force-stop "$PACKAGE"
+
+"$ADB" shell am start \
+    -W \
+    -a android.intent.action.VIEW \
+    -c android.intent.category.BROWSABLE \
+    -d "$URL" \
+    -n "$PACKAGE/$ACTIVITY"
