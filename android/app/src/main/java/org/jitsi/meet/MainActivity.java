@@ -162,7 +162,11 @@ public class MainActivity extends JitsiMeetActivity {
         JitsiMeetConferenceOptions defaultOptions
             = new JitsiMeetConferenceOptions.Builder()
             .setServerURL(buildURL(defaultURL))
-            .setFeatureFlag("welcomepage.enabled", true)
+            .setFeatureFlag("welcomepage.enabled", false) // Nasconde la home di base
+            .setFeatureFlag("prejoinpage.enabled", false) // Ingresso istantaneo senza lobby
+            .setFeatureFlag("pip.enabled", false) // Blocca la finestrella fluttuante
+            .setFeatureFlag("invite.enabled", false)
+            .setFeatureFlag("chat.enabled", false)
             .setFeatureFlag("call-integration.enabled", false)
             .setFeatureFlag("resolution", 360)
             .setFeatureFlag("server-url-change.enabled", false)
@@ -203,6 +207,23 @@ public class MainActivity extends JitsiMeetActivity {
      * @return true if a browser was launched, false otherwise.
      */
     private boolean returnToTotem() {
+        if (!conferenceWasJoined || exitRedirectHandled) {
+            return false;
+        }
+
+        exitRedirectHandled = true;
+
+        // BASTA INTENT. BASTA APRIRE CHROME. BASTA NUOVE SCHEDE.
+        // Uccidiamo l'Activity e il processo
+        // L'OS tornerà da solo alla scheda di Chrome che è rimasta sotto,
+        // e il tuo evento "visibilitychange" in JS farà il reset del form.
+        finishAndRemoveTask();
+        android.os.Process.killProcess(android.os.Process.myPid());
+        System.exit(0);
+
+        return true;
+    }
+    private boolean returnToTotem_LEGACY() {
         if (!conferenceWasJoined || exitRedirectHandled) {
             return false;
         }
