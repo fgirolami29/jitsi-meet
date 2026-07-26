@@ -200,6 +200,14 @@
     "deploy:android:lab": "./scripts/android/bmj-build-debug.sh lab",
     "deploy:android:prod": "./scripts/android/bmj-build-debug.sh prod",
     "deploy:android:lab:boot": "npm run vm:start && npm run deploy:android:lab",
-    "deploy:android:prod:diag": "./scripts/android/bmj-post-build-diagnostic-check-sh"
+    "deploy:android:prod:diag": "./scripts/android/bmj-post-build-diagnostic-check-sh",
+    "install:jitsi": "adb -s emulator-5554 install -r /Users/federicogirolami/GitLab/gorica-rk3288-firmware-lab/99_TOOLS/apk/jitsi-meet-22.1.1-fdroid.apk",
+    "install:lab": "adb -s emulator-5554 install -r android/app/build/outputs/apk/labRelease/app-labRelease.apk",
+    "install:prod": "adb -s emulator-5554 install -r android/app/build/outputs/apk/release/app-release.apk",
+    "logcat:clear": "adb -s emulator-5554 logcat -c",
+    "logcat:video": "adb -s emulator-5554 logcat | grep -iE 'webrtc|mediacodec|omx|video|egl|decoder|surface'",
+    "logcat:jitsi": "adb -s emulator-5554 logcat | grep -iE 'JitsiMeetSDK|ReactNative|WebRTCModule'",
+    "logcat:crash": "adb -s emulator-5554 logcat | grep -iE 'fatal|exception|crash|error'",
+    "logcat:all": "adb -s emulator-5554 logcat"
   }
 }

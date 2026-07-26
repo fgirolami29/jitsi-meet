@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+EMULATOR='emulator-5554'
 
 usage() {
   cat <<'EOF'
@@ -170,7 +171,7 @@ find_and_install() {
   "$ADB" devices
 
   printf '\n===== INSTALL =====\n'
-  "$ADB" install -r "$apk"
+  "$ADB" -s "$EMULATOR" install -r "$apk"
 }
 
 check_node_runtime() {

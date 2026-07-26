@@ -209,9 +209,6 @@ public class MainActivity extends JitsiMeetActivity {
 
         exitRedirectHandled = true;
 
-        final View decorView = getWindow().getDecorView();
-        decorView.setVisibility(View.INVISIBLE);
-
         Intent browserIntent = new Intent(
             Intent.ACTION_VIEW,
             Uri.parse(BuildConfig.BMJ_EXIT_URL));
@@ -230,7 +227,6 @@ public class MainActivity extends JitsiMeetActivity {
             try {
                 startActivity(browserIntent);
             } catch (ActivityNotFoundException browserNotAvailable) {
-                decorView.setVisibility(View.VISIBLE);
                 exitRedirectHandled = false;
                 Log.e(TAG, "No browser available for BMJ exit URL", browserNotAvailable);
                 return false;
@@ -239,8 +235,15 @@ public class MainActivity extends JitsiMeetActivity {
 
         overridePendingTransition(0, 0);
         finishAndRemoveTask();
+        
+        // LA BOMBA ATOMICA: Uccide il processo, il bridge JS e il servizio di Jitsi.
+        // Al prossimo deeplink riparte da zero, 100% pulito.
+        android.os.Process.killProcess(android.os.Process.myPid());
+        System.exit(0);
+        
         return true;
     }
+
 
     /**
      * Converts the dedicated browser App Link into the actual Jitsi room URL.
@@ -328,11 +331,10 @@ public class MainActivity extends JitsiMeetActivity {
             "^(?=.{2,121}$)[\\p{L}\\p{M}]"
                 + "[\\p{L}\\p{M} .'-]*$");
     }
-
+    
     @Override
     public void onNewIntent(Intent intent) {
         Intent normalizedIntent = normalizeConferenceIntent(intent);
-
         setIntent(normalizedIntent);
         super.onNewIntent(normalizedIntent);
     }
